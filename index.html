@@ -23,7 +23,7 @@ label{font-size:12px;color:var(--mut)}.chk{display:flex;align-items:center;gap:8
 [hidden]{display:none!important}
 </style></head><body>
 <div class="tabs"><button data-t="home" class="on">Home</button><button data-t="trades">Trades</button><button data-t="ana">Analytics</button><button data-t="wd">Withdraw</button><button data-t="set">Settings</button></div>
-<div id="home"><div class="card" id="mission"></div><div class="card" id="risk"></div><div class="card" id="stats"></div></div>
+<div id="home"><div class="card" id="mission"></div><div class="card" id="risk"></div><div class="card" id="stats"></div><div class="card" id="strat"></div></div>
 <div id="trades" hidden><button id="new" style="margin:0 0 12px">+ Add trade</button><div class="card"><div id="list"></div></div></div>
 <div id="form" hidden><div class="card"><h2 id="ftitle">Trade</h2><div class="warn" id="warn" hidden></div><div class="grid" id="fields"></div><div id="checks"></div>
 <div class="mut" id="calc" style="margin-top:8px"></div><button id="save">Save trade</button><button class="sec" id="cancel">Cancel</button><button class="del" id="del">Delete trade</button></div></div>
@@ -72,7 +72,9 @@ function mission(R){const now=new Date(),dow=now.getDay();if(dow===0||dow===6)re
  for(let i=0;i<dow-1;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);const n=sumD(R,x=>x===ymd(d));
   if(n>=target-1e-9){mode='Protect';target=n}else{mode='Recover';target=target-n}}
  const ds=ymd(now),n=sumD(R,x=>x===ds),a=R.filter(t=>t.date===ds).length;return{target,mode,n,a,rem:target-n}}
-function render(){const R=calc(),m=mission(R),el=$('mission'),wsum=W.reduce((s,w)=>s+w.amt,0);renderAna(R);renderWd(wsum);
+function renderStrat(R){const rows=L.strat.slice(0,5).map(nm=>{const g=R.filter(x=>x.strat===nm),n=g.length,p=g.reduce((s,x)=>s+x.pl,0),wp=n?Math.round(g.filter(x=>x.pl>0).length/n*100):0,rs=g.filter(x=>x.R!=null),ar=rs.length?rs.reduce((s,x)=>s+x.R,0)/rs.length:null;return{nm,n,p,wp,ar}}),ok=rows.filter(r=>r.n>=10),best=ok.length?ok.reduce((a,b)=>b.p>a.p?b:a):null;
+ $('strat').innerHTML='<h2>Strategy scorecard</h2>'+rows.map(r=>'<div class="tr" style="cursor:default"><span>'+r.nm+'<span class="tag">'+(r.n<10?r.n+'/10 trades':r.n+' trades')+'</span>'+(r.n?'<span class="tag">'+r.wp+'%</span><span class="tag">'+(r.ar==null?'–':r.ar.toFixed(2)+'R')+'</span>':'')+'</span><b class="'+cls(r.p)+'">'+(r.n?f(r.p):'–')+'</b></div>').join('')+'<div class="mut" style="margin-top:8px;font-size:13px">'+(best?'Best so far: '+best.nm:'Wait for 10 trades per strategy before judging it.')+'</div>'}
+function render(){const R=calc(),m=mission(R),el=$('mission'),wsum=W.reduce((s,w)=>s+w.amt,0);renderAna(R);renderWd(wsum);renderStrat(R);
  if(m.closed)el.innerHTML='<h2>Today\'s Mission</h2><div class="big">Market closed</div><div class="mut">See you Monday.</div>';
  else{const done=m.rem<=1e-9,fail=!done&&m.a>=S.maxt,p=l=>Math.round(m.rem*10/(l/0.01));
   el.innerHTML='<h2>Today\'s Mission · '+m.mode+'</h2><div class="big">'+f(m.target)+' target</div>'+(done?'<span class="win">Mission complete ✓</span>':fail?'<span class="loss">Mission failed — stop for today</span>':'<span class="amb">In progress</span>')+
